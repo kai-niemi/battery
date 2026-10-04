@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Battery</title>
+</head>
+<body>
+
+<!-- Outcome badge of a run -->
+<span th:fragment="outcomeBadge(run)" class="badge rounded-pill"
+      th:classappend="${run.outcome().name() == 'COMPLETED'} ? 'text-bg-success'
+                      : (${run.outcome().name() == 'CANCELLED'} ? 'text-bg-warning' : 'text-bg-danger')"
+      th:text="${run.outcome()}">COMPLETED</span>
+
+<!-- Key metrics of a run as a row of tiles -->
+<div th:fragment="metrics(run)" class="row row-cols-2 row-cols-md-3 row-cols-xl-6 g-2"
+     th:with="fmt=${T(io.battery.scenario.run.RunFormat)}">
+    <div class="col">
+        <div class="border rounded p-2 h-100">
+            <div class="small text-body-secondary">Iterations</div>
+            <div class="fs-5 fw-semibold" th:text="${fmt.count(run.totals().iterations())}">0</div>
+            <div class="small text-body-secondary"
+                 th:text="${fmt.count(run.totals().succeeded()) + ' ok'}">0 ok</div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="border rounded p-2 h-100">
+            <div class="small text-body-secondary">Throughput</div>
+            <div class="fs-5 fw-semibold" th:text="${fmt.rate(run.totals().opsPerSecond()) + ' ops/s'}">0 ops/s</div>
+            <div class="small text-body-secondary"
+                 th:text="${fmt.rate(run.totals().peakOpsPerSecond()) + ' peak'}">0 peak</div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="border rounded p-2 h-100">
+            <div class="small text-body-secondary">Latency p99</div>
+            <div class="fs-5 fw-semibold" th:text="${fmt.millis(run.latency().p99())}">0ms</div>
+            <div class="small text-body-secondary"
+                 th:text="${'p50 ' + fmt.millis(run.latency().p50()) + ' · p99.9 ' + fmt.millis(run.latency().p999())}">
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="border rounded p-2 h-100">
+            <div class="small text-body-secondary">Errors</div>
+            <div class="fs-5 fw-semibold" th:text="${fmt.percent(run.totals().errorRate())}">0</div>
+            <div class="small text-body-secondary"
+                 th:text="${fmt.count(run.totals().transientErrors()) + ' transient · ' + fmt.count(run.totals().errors()) + ' ended users'}">
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="border rounded p-2 h-100">
+            <div class="small text-body-secondary">Users</div>
+            <div class="fs-5 fw-semibold" th:text="${run.workers().started()}">0</div>
+            <div class="small text-body-secondary"
+                 th:text="${run.workers().peakConcurrent() + ' peak · ' + run.workers().failed() + ' failed'}">
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="border rounded p-2 h-100">
+            <div class="small text-body-secondary">Connection pool</div>
+            <th:block th:if="${run.pool()}">
+                <div class="fs-5 fw-semibold" th:text="${run.pool().peakPending() + ' waiting'}">0 waiting</div>
+                <div class="small text-body-secondary"
+                     th:text="${run.pool().maxSize() + ' connections · ' + run.pool().timeouts() + ' timeouts'}">
+                </div>
+            </th:block>
+            <div class="fs-5 fw-semibold" th:unless="${run.pool()}">-</div>
+        </div>
+    </div>
+</div>
+
+<!-- Findings of a run, by severity -->
+<div th:fragment="findings(run)">
+    <ul class="list-group" th:unless="${run.findings().isEmpty()}">
+        <li class="list-group-item d-flex gap-2 align-items-start"
+            th:each="finding: ${run.findings()}"
+            th:classappend="${finding.severity().name() == 'ERROR'} ? 'list-group-item-danger'
+                            : (${finding.severity().name() == 'WARNING'} ? 'list-group-item-warning' : '')">
+            <span class="badge rounded-pill mt-1"
+                  th:classappend="${finding.severity().name() == 'ERROR'} ? 'text-bg-danger'
+                                  : (${finding.severity().name() == 'WARNING'} ? 'text-bg-warning' : 'text-bg-secondary')"
+                  th:text="${finding.severity()}">INFO</span>
+            <div>
+                <span class="fw-semibold" th:if="${finding.phase()}" th:text="${finding.phase() + ':'}"></span>
+                <span th:text="${finding.message()}"></span>
+            </div>
+        </li>
+    </ul>
+    <p class="text-body-secondary mb-0" th:if="${run.findings().isEmpty()}">No findings.</p>
+</div>
+
+<!-- Status of the active (running or cancelling) scenario, laid out like the run card -->
+<div th:fragment="activeCard(status, scenario, runId, title)" class="card shadow-sm my-3"
+     th:with="running=${status eq T(io.battery.scenario.ScenarioStatus).RUNNING}"
+     th:classappend="${running} ? 'border-success' : 'border-warning'">
+    <div class="card-header d-flex flex-wrap gap-2 align-items-center">
+        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"
+              th:classappend="${running} ? 'text-success' : 'text-warning'"></span>
+        <span class="fw-bold" th:if="${runId}" th:text="${'Run #' + runId}">Run #1</span>
+        <span th:if="${scenario}" th:text="${scenario.name}"></span>
+        <span class="badge rounded-pill"
+              th:classappend="${running} ? 'text-bg-success' : 'text-bg-warning'"
+              th:text="${status}">RUNNING</span>
+        <span class="ms-auto">
+            <button th:if="${running}" form="scenarioForm" name="action" value="abort" type="submit"
+                    class="btn btn-sm btn-outline-warning">Abort</button>
+            <a class="btn btn-sm btn-outline-secondary" th:href="@{/worker}">Workers</a>
+        </span>
+    </div>
+    <div class="card-body">
+        <p class="text-body-secondary mb-0" th:text="${title}"></p>
+    </div>
+</div>
+
+<!-- Compact summary of a run, such as the most recent one on the dashboard.
+     The error, if any, opens in the #stackTraceModal when the run failed. -->
+<div th:fragment="runCard(run, error)" class="card shadow-sm my-3"
+     th:with="fmt=${T(io.battery.scenario.run.RunFormat)}">
+    <div class="card-header d-flex flex-wrap gap-2 align-items-center">
+        <span class="fw-bold" th:text="${'Run #' + run.id()}">Run #1</span>
+        <span th:text="${run.scenario()}"></span>
+        <span th:replace="~{fragments/run-summary :: outcomeBadge(${run})}"></span>
+        <span class="text-body-secondary small"
+              th:text="${'in ' + fmt.millis(run.durationMillis()) + ', finished ' + fmt.time(run.endTime())}"></span>
+        <span class="ms-auto">
+            <button th:if="${error != null and run.outcome().name() == 'FAILED'}" type="button"
+                    class="btn btn-sm btn-outline-danger"
+                    data-bs-toggle="modal" data-bs-target="#stackTraceModal">Stack Trace</button>
+            <a class="btn btn-sm btn-outline-primary" th:href="@{/run/{id}(id=${run.id()})}">Details</a>
+            <a class="btn btn-sm btn-outline-secondary" th:href="@{/run}">All runs</a>
+        </span>
+    </div>
+    <div class="card-body">
+        <p class="text-body-secondary" th:if="${run.outcomeReason()}" th:text="${run.outcomeReason()}"></p>
+        <div class="alert alert-danger py-2" role="alert"
+             th:if="${error != null and run.outcome().name() == 'FAILED'}">
+            <span class="fw-semibold" th:text="${error.className + ':'}"></span>
+            <span th:text="${error.message}"></span>
+        </div>
+        <div th:replace="~{fragments/run-summary :: metrics(${run})}"></div>
+        <h6 class="text-body-secondary mt-3">Findings</h6>
+        <div th:replace="~{fragments/run-summary :: findings(${run})}"></div>
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en" data-bs-theme="auto">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <title>Battery</title>
+    <link rel="stylesheet" type="text/css"
+          href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.css"></link>
+    <link rel="stylesheet" type="text/css"
+          href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/theme/abbott.min.css"></link>
+    <link rel="stylesheet" type="text/css"
+          href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/theme/dracula.min.css"></link>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@docsearch/css@3">
+    <link href="/webjars/bootstrap/5.3.8/css/bootstrap.min.css" rel="stylesheet">
+    <link href="../static/css/main.css" rel="stylesheet" th:href="@{/css/main.css}"/>
+
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        var formModel = /*[[${form}]]*/ "dummy";
+        /*]]>*/
+    </script>
+</head>
+
+<body>
+
+<div th:replace="~{fragments/theme :: theme}"></div>
+
+<header th:replace="~{fragments/header :: header}"></header>
+
+<main>
+    <svg th:replace="~{fragments/symbols :: symbols}"></svg>
+
+    <div class="py-3 m-0 rounded bg-body-tertiary">
+        <div class="container-fluid">
+<!--            <h3>Dashboard</h3>-->
+<!--            <hr>-->
+
+            <div class="alert alert-warning align-items-center alert-dismissible fade show" role="alert"
+                 th:if="${#lists.size(#fields.errors('form.*')) > 0}">
+                <h4 class="alert-heading">
+                    <svg class="bi flex-shrink-0 me-2" role="img" aria-label="Info:" width="1em" height="1em">
+                        <use xlink:href="#exclamation-triangle-fill"/>
+                    </svg>
+                    There are errors
+                </h4>
+                <p>Please correct the following issues:</p>
+                <hr>
+                <ul>
+                    <li th:each="err : ${#fields.errors('form.*')}" th:text="${err}"/>
+                </ul>
+            </div>
+
+            <div id="scenario-status-container" th:fragment="statusPanel">
+                <!-- Active scenario, while running or cancelling -->
+                <th:block th:if="${activeStatus eq T(io.battery.scenario.ScenarioStatus).RUNNING
+                                  or activeStatus eq T(io.battery.scenario.ScenarioStatus).CANCELLING}">
+                    <div th:replace="~{fragments/run-summary :: activeCard(${activeStatus}, ${activeScenario}, ${activeRunId}, ${activeTitle})}"></div>
+                </th:block>
+
+                <!-- Most recent run, once all its users completed and no scenario is running -->
+                <th:block th:if="${lastRun}">
+                    <div th:replace="~{fragments/run-summary :: runCard(${lastRun}, ${lastError})}"></div>
+                </th:block>
+
+                <div class="modal fade" id="stackTraceModal" tabindex="-1" role="dialog" th:if="${lastError}">
+                    <div class="modal-dialog modal-dialog-scrollabl modal-xl" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Stack Trace</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+
+                            <div class="modal-body">
+                        <textarea class="form-control font-monospace text-break"
+                                  id="floatingTextarea" style="height: 500px"
+                                  th:text="${lastError.stackTrace}" disabled></textarea>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <form th:action="@{/scenario}" th:object="${form}" method="post" id="scenarioForm">
+                <div class="row g-4">
+                    <div class="col">
+                        <h5 class="text-body-secondary">Effective Model</h5>
+                        <div style="height: 90%">
+                            <textarea id="modelEditor" name="modelEditor" class="form-control"
+                                  th:field="*{applicationModelYaml}"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="col">
+                        <!-- Section :: Before steps -->
+                        <div th:unless="${batteryModel.before.steps.isEmpty()}" id="before-steps">
+                            <h5 class="text-body-secondary">Before steps</h5>
+
+                            <ol class="list-group list-group-numbered my-2">
+                                <li class="list-group-item d-flex justify-content-between align-items-start"
+                                    th:each="step: ${batteryModel.before.steps}">
+                                    <div class="ms-2 me-auto">
+                                        <div class="fw-bold" th:text="${step.name}"></div>
+                                        <p th:text="${step.describe()}"></p>
+                                    </div>
+                                    <span class="badge text-bg-success rounded-pill"
+                                          th:if="${step.capture}">Capture</span>
+                                    <span class="badge text-bg-warning rounded-pill"
+                                          th:unless="${step.capture}">No capture</span>
+                                </li>
+                            </ol>
+
+                            <div class="form-check my-2">
+                                <input th:field="*{skipBeforeSteps}" class="form-check-input" type="checkbox"
+                                       id="skip-before">
+                                <label class="form-check-label" for="skip-before"
+                                       data-bs-toggle="tooltip" data-bs-placement="top"
+                                       title="Skipping before steps with capture can result in scenarios failing.">
+                                    Skip before steps</label>
+                            </div>
+                            <hr>
+                        </div>
+
+                        <!-- Section :: After steps -->
+                        <div th:unless="${batteryModel.after.steps.isEmpty()}" id="after-steps">
+                            <h5 class="text-body-secondary">After steps</h5>
+
+                            <ol class="list-group list-group-numbered my-2">
+                                <li class="list-group-item d-flex justify-content-between align-items-start"
+                                    th:each="step: ${batteryModel.after.steps}">
+                                    <div class="ms-2 me-auto">
+                                        <div class="fw-bold" th:text="${step.name}"></div>
+                                        <p th:text="${step.describe()}"></p>
+                                    </div>
+                                </li>
+                            </ol>
+
+                            <div class="form-check my-2">
+                                <input th:field="*{skipAfterSteps}" class="form-check-input" type="checkbox"
+                                       id="skip-after">
+                                <label class="form-check-label" for="skip-after"
+                                       data-bs-toggle="tooltip" data-bs-placement="top">
+                                    Skip after steps</label>
+                            </div>
+
+                            <hr>
+                        </div>
+
+                        <!-- Section :: Phases -->
+                        <h5 class="text-body-secondary">Phases</h5>
+
+                        <div class="row row-cols-sm-auto row-cols-md-2 g-2">
+                            <div th:each="phase,iStat: ${batteryModel.phases}">
+                                <div class="col">
+                                    <div class="card text-center shadow-lg border-2"
+                                         th:id="${#strings.replace(phase.name, ' ', '_')}">
+                                        <div class="card-body">
+                                            <div class="progress-spinner"
+                                                 style="display: none">
+                                                <span class="spinner-grow-sm spinner-grow float-end text-success border-primary-subtle"
+                                                      aria-hidden="false"></span>
+                                            </div>
+
+                                            <h5 class="card-title"
+                                                th:text="${(iStat.index+1) + '. ' + phase.name}"></h5>
+
+                                            <p class="card-text mb-1 small" title="Total users created over the duration" rel="tooltip"
+                                               th:if="${phase.fixedPhase}">
+                                                Users: <span class="text-info" th:text="${{phase.users}}"></span>
+                                            </p>
+                                            <p class="card-text mb-1 small" title="Initial users/sec" rel="tooltip"
+                                               th:if="${phase.rampingPhase}">
+                                                Start rate: <span class="text-info"
+                                                                  th:text="${{phase.startRate + '/s'}}"></span>
+                                            </p>
+                                            <p class="card-text mb-1 small" title="Final users/sec" rel="tooltip"
+                                               th:if="${phase.rampingPhase}">
+                                                Max rate: <span class="text-success"
+                                                                th:text="${{phase.effectiveMaxRate + '/s'}}"></span>
+                                            </p>
+                                            <p class="card-text mb-1 small" title="Max" rel="tooltip">
+                                                Max concurrency: <span class="text-success" th:text="${{phase.maxConcurrency}}"></span>
+                                            </p>
+                                            <p class="card-text mb-1 small" title="Duration" rel="tooltip">
+                                                Duration: <span class="text-warning"
+                                                                th:text="${{phase.durationFormatted}}"></span>
+                                            </p>
+
+                                            <div class="progress my-2" role="progressbar"
+                                                 aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                                                <div class="progress-bar bg-primary"
+                                                     th:style="${{'width: ' + progressModel.phaseProgress(phase) + '%'}}"
+                                                     th:text="${{progressModel.phaseProgress(phase) + '%'}}"></div>
+                                            </div>
+
+                                            <input th:field="*{skipPhases}"
+                                                   th:value="${phase.name}"
+                                                   class="form-check-input" type="checkbox">
+                                            <label th:for="${#ids.prev('skipPhases')}"
+                                                   class="form-check-label"
+                                                   data-bs-toggle="tooltip" data-bs-placement="top"
+                                                   title="Skip this phase">Skip phase</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-check my-2">
+                            <input th:field="*{skipAllPhases}" class="form-check-input" type="checkbox"
+                                   id="skip-all-phases">
+                            <label class="form-check-label" for="skip-all-phases"
+                                   data-bs-toggle="tooltip" data-bs-placement="top"
+                                   title="Skipping before steps with capture can result in scenarios failing.">
+                                Skip all phases (single virtual user for testing)</label>
+                        </div>
+
+                        <hr>
+
+                        <!-- Section :: Scenarios -->
+                        <h5 class="text-body-secondary">Scenarios</h5>
+
+                        <div class="list-group">
+                            <div class="list-group-item list-group-item-action" aria-current="true"
+                                 th:each="scenario, iStat: ${batteryModel.scenarios}">
+                                <div class="d-flex w-100 justify-content-between my-2">
+                                    <div>
+                                        <input class="form-check-input mb-2" type="radio"
+                                               th:field="*{name}"
+                                               th:value="${scenario.name}">
+                                        <label th:for="${#ids.prev('name')}"
+                                               class="form-check-label fw-bold" th:text="${scenario.name}"></label>
+                                    </div>
+
+                                    <small th:text="${scenario.durationFormatted}"></small>
+                                </div>
+
+                                <p class="mb-1" th:text="${scenario.describe()}"></p>
+
+                                <ol class="list-group list-group-numbered list-group-flush">
+                                    <li class="list-group-item text-muted text-success-emphasis"
+                                        th:each="step: ${scenario.steps}">
+                                        <span th:text="${step.describe()}"></span>
+                                        <span class="badge text-bg-success rounded-pill"
+                                              th:if="${step.capture}">Capture</span>
+                                        <span class="badge text-bg-warning rounded-pill"
+                                              th:unless="${step.capture}">No capture</span>
+                                    </li>
+                                </ol>
+                            </div>
+                        </div>
+
+                        <hr/>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-start">
+                            <button name="action" value="begin" type="submit" class="btn btn-sm btn-outline-primary"
+                                    data-bs-toggle="tooltip" data-bs-placement="top"
+                                    title="Start ramping virtual users for selected scenario">Start Scenario
+                            </button>
+                            <button name="action" value="reset" type="submit" class="btn btn-outline-secondary"
+                                    data-bs-toggle="tooltip" data-bs-placement="top"
+                                    title="Reset form">Reset
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="thick-divider"></div>
+</main>
+
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+
+<script language="javascript" type="text/javascript"
+        src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.js"></script>
+<script language="javascript" type="text/javascript"
+        src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/mode/perl/perl.min.js"></script>
+
+<script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+<script src="https://code.jquery.com/ui/1.13/jquery-ui.js"></script>
+<script src="https://code.jquery.com/color/jquery.color-2.2.0.js"></script>
+
+<script src="/webjars/bootstrap/5.3.8/js/bootstrap.bundle.min.js"></script>
+<script src="/webjars/sockjs-client/1.5.1/sockjs.min.js"></script>
+<script src="/webjars/stomp-websocket/2.3.4/stomp.min.js"></script>
+
+<script th:src="@{/js/color-modes.js}"></script>
+<script th:src="@{/js/main.js}"></script>
+<script th:src="@{/js/scenario.js}"></script>
+
+</body>
+</html>

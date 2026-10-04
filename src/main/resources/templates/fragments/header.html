@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+<head>
+    <meta charset="UTF-8">
+    <title>Battery</title>
+</head>
+<body>
+
+<header data-bs-theme="dark" th:fragment="header">
+    <div class="px-3 py-2 text-bg-dark border-bottom">
+        <div class="container-fluid">
+            <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
+                <a th:href="@{/}" class="d-flex align-items-center my-2 my-lg-0 me-lg-auto text-white text-decoration-none fs-4">
+                    <img class="bi me-2" height="48" th:src="@{/images/logo-mono-256px.png}">
+                    <strong>Battery</strong>
+                </a>
+
+                <ul class="nav col-12 col-lg-auto my-2 justify-content-center my-md-0 text-small">
+                    <li>
+                        <a th:href="@{/}" class="nav-link text-white">
+                            <svg class="bi d-block mx-auto mb-1" width="24" height="24"><use xlink:href="#home"/></svg>
+                            Home
+                        </a>
+                    </li>
+                    <li>
+                        <a th:href="@{/scenario}" class="nav-link text-white">
+                            <svg class="bi d-block mx-auto mb-1" width="24" height="24"><use xlink:href="#speedometer2"/></svg>
+                            Dashboard
+                        </a>
+                    </li>
+                    <li>
+                        <a th:href="@{/worker}" class="nav-link text-white">
+                            <svg class="bi d-block mx-auto mb-1" width="24" height="24">
+                                <use xlink:href="#worker"/>
+                            </svg>
+                            Workers
+                        </a>
+                    </li>
+                    <li>
+                        <a th:href="@{/run}" class="nav-link text-white">
+                            <svg class="bi d-block mx-auto mb-1" width="24" height="24">
+                                <use xlink:href="#table"/>
+                            </svg>
+                            Runs
+                        </a>
+                    </li>
+
+                    <li>
+                        <a class="nav-link dropdown-toggle text-white" role="button"
+                           data-bs-toggle="dropdown" aria-expanded="false">
+                            <svg class="bi d-block mx-auto mb-1" width="24" height="24"><use xlink:href="#grid"/></svg>
+                            Metrics
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a th:href="@{/worker-charts}" class="dropdown-item">Worker Metrics</a></li>
+                            <li><a th:href="@{/system-charts}" class="dropdown-item">System Metrics</a></li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a th:href="@{/playground}" class="nav-link text-white">
+                            <svg class="bi d-block mx-auto mb-1" width="24" height="24"><use xlink:href="#edit"/></svg>
+                            Playground
+                        </a>
+                    </li>
+                    <li>
+                        <a class="nav-link dropdown-toggle text-white" role="button"
+                           data-bs-toggle="dropdown" aria-expanded="false">
+                            <svg class="bi d-block mx-auto mb-1" width="24" height="24">
+                                <use xlink:href="#people-circle"/></svg>
+                            Help
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a href="https://github.com/kai-niemi/battery" class="dropdown-item" target="_blank">Follow on Github</a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a th:href="@{/api}" class="dropdown-item" target="_blank">API Index</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</header>
+
+</body>
+</html>

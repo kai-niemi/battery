@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en" data-bs-theme="auto">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <title>Battery</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@docsearch/css@3">
+    <link href="/webjars/bootstrap/5.3.8/css/bootstrap.min.css" rel="stylesheet">
+    <link href="../static/css/main.css" rel="stylesheet" th:href="@{/css/main.css}"/>
+</head>
+
+<body>
+
+<div th:replace="~{fragments/theme :: theme}"></div>
+
+<header th:replace="~{fragments/header :: header}"></header>
+
+<main>
+    <svg th:replace="~{fragments/symbols :: symbols}"></svg>
+
+    <div class="py-2 rounded bg-body-tertiary">
+        <div class="container-xl">
+            <div class="hstack gap-3 mb-3">
+                <h3 class="mb-0" th:text="${'Worker #' + form.id}">Worker</h3>
+                <span class="badge" th:classappend="${form.statusBadge}" th:text="${form.status}"></span>
+                <div class="btn-group ms-auto" role="group" aria-label="Worker navigation">
+                    <a th:if="${previousId != null}" th:href="@{/worker/{id}(id=${previousId})}"
+                       class="btn btn-sm btn-outline-primary">&laquo; Previous</a>
+                    <button th:unless="${previousId != null}" type="button"
+                            class="btn btn-sm btn-outline-primary" disabled>&laquo; Previous</button>
+                    <a th:if="${nextId != null}" th:href="@{/worker/{id}(id=${nextId})}"
+                       class="btn btn-sm btn-outline-primary">Next &raquo;</a>
+                    <button th:unless="${nextId != null}" type="button"
+                            class="btn btn-sm btn-outline-primary" disabled>Next &raquo;</button>
+                </div>
+                <a th:href="@{/worker}" class="btn btn-sm btn-outline-secondary">Back to Workers</a>
+            </div>
+
+            <div class="row g-3 mb-3"
+                 th:with="m=${form.metrics},
+                          total=${m.success + m.transientFail + m.nonTransientFail}">
+                <!-- Overview -->
+                <div class="col-lg-4">
+                    <div class="card h-100">
+                        <div class="card-header">Overview</div>
+                        <div class="card-body">
+                            <dl class="row mb-0">
+                                <dt class="col-5">ID</dt>
+                                <dd class="col-7" th:text="${form.id}"></dd>
+                                <dt class="col-5">Scenario</dt>
+                                <dd class="col-7 text-break" th:text="${form.scenario}"></dd>
+                                <dt class="col-5">Phase</dt>
+                                <dd class="col-7 text-break" th:text="${form.phase}"></dd>
+                                <dt class="col-5">Status</dt>
+                                <dd class="col-7">
+                                    <span class="badge" th:classappend="${form.statusBadge}"
+                                          th:text="${form.status}"></span>
+                                </dd>
+                                <dt class="col-5">Problems</dt>
+                                <dd class="col-7 mb-0">
+                                    <span class="badge"
+                                          th:classappend="${form.hasProblems() ? 'text-bg-danger' : 'text-bg-success'}"
+                                          th:text="${#lists.size(form.problems)}"></span>
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Timing -->
+                <div class="col-lg-4">
+                    <div class="card h-100">
+                        <div class="card-header">Timing</div>
+                        <div class="card-body">
+                            <dl class="row mb-0">
+                                <dt class="col-5">Started</dt>
+                                <dd class="col-7" th:text="${{form.startTime}}"></dd>
+                                <dt class="col-5">Planned Finish</dt>
+                                <dd class="col-7" th:text="${{form.finishTime}}"></dd>
+                                <dt class="col-5">Ended</dt>
+                                <dd class="col-7" th:text="${form.endTime != null} ? ${{form.endTime}} : '-'"></dd>
+                                <dt class="col-5">Remaining</dt>
+                                <dd class="col-7" th:text="${form.remainingTime}"></dd>
+                                <dt class="col-5">Completion Time</dt>
+                                <dd class="col-7 mb-0" th:text="${form.completionTime}"></dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Calls -->
+                <div class="col-lg-4">
+                    <div class="card h-100">
+                        <div class="card-header">Calls</div>
+                        <div class="card-body">
+                            <dl class="row mb-0">
+                                <dt class="col-5">Total</dt>
+                                <dd class="col-7" th:text="${total}"></dd>
+                                <dt class="col-5">Success</dt>
+                                <dd class="col-7 text-success" th:text="${m.success}"></dd>
+                                <dt class="col-5">Transient Fail</dt>
+                                <dd class="col-7 text-warning" th:text="${m.transientFail}"></dd>
+                                <dt class="col-5">Non-Transient Fail</dt>
+                                <dd class="col-7 text-danger" th:text="${m.nonTransientFail}"></dd>
+                                <dt class="col-5">Success Rate</dt>
+                                <dd class="col-7 mb-0"
+                                    th:text="${total > 0} ? ${#numbers.formatDecimal(m.success * 100.0 / total, 1, 1) + ' %'} : '-'"></dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Latency and throughput -->
+                <div class="col-12">
+                    <div class="table-responsive-xl">
+                        <table class="table table-striped table-bordered table-sm caption-top mb-0">
+                            <caption>Latency (ms) and throughput over the last 10 seconds, updated
+                                <span th:text="${{m.updateTime}}"></span></caption>
+                            <thead class="thead-light">
+                            <tr>
+                                <th>Mean</th>
+                                <th>P50</th>
+                                <th>P90</th>
+                                <th>P95</th>
+                                <th>P99</th>
+                                <th>P99.9</th>
+                                <th>TpS</th>
+                                <th>TpM</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <td th:text="${#numbers.formatDecimal(m.meanTimeMillis,1,1)}"></td>
+                                <td th:text="${#numbers.formatDecimal(m.p50,1,1)}"></td>
+                                <td th:text="${#numbers.formatDecimal(m.p90,1,1)}"></td>
+                                <td th:text="${#numbers.formatDecimal(m.p95,1,1)}"></td>
+                                <td th:text="${#numbers.formatDecimal(m.p99,1,1)}"></td>
+                                <td th:text="${#numbers.formatDecimal(m.p999,1,1)}"></td>
+                                <td th:text="${#numbers.formatDecimal(m.opsPerSec,1,1)}"></td>
+                                <td th:text="${#numbers.formatDecimal(m.opsPerMin,1,1)}"></td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <p th:if="${#lists.size(form.problems) == 0}" class="badge text-bg-success mt-3">No errors found</p>
+
+            <div class="table-responsive-xl"
+                 th:if="${#lists.size(form.problems) > 0}">
+                <table class="table table-striped table-bordered table-hover table-sm caption-top">
+                    <caption>Top 10 exceptions ordered by time (most recent on top)</caption>
+                    <thead class="thead-light">
+                    <tr>
+                        <th>Time</th>
+                        <th>Type</th>
+                        <th>Message</th>
+                        <th>Action</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="p,iRow: ${form.getProblems(10)}" th:attr="id=${'editModal' + iRow.index}">
+                        <td th:text="${{p.getCreatedAt()}}"></td>
+                        <td th:text="${p.getClassName()}"></td>
+                        <td th:text="${p.getMessage()}"></td>
+                        <td>
+                            <a class="btn btn-sm btn-outline-warning"
+                               data-bs-toggle="modal" data-row="${p}"
+                               th:attr="data-bs-target='#modal-detail'+${iRow.index }">Stack Trace</a>
+
+                            <!-- Modal -->
+                            <div class="modal fade" tabindex="-1" role="dialog"
+                                 th:id="modal-detail+${iRow.index }">
+                                <div class="modal-dialog modal-dialog-scrollabl modal-xl" role="document">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Stack Trace</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+
+                                        <div class="modal-body">
+                                            <textarea class="form-control font-monospace text-break"
+                                                      id="floatingTextarea" style="height: 500px"
+                                                      th:text="${p.stackTrace}" disabled></textarea>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+
+
+<script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+<script src="https://code.jquery.com/ui/1.13/jquery-ui.js"></script>
+<script src="https://code.jquery.com/color/jquery.color-2.2.0.js"></script>
+
+<script src="/webjars/bootstrap/5.3.8/js/bootstrap.bundle.min.js"></script>
+<script src="/webjars/sockjs-client/1.5.1/sockjs.min.js"></script>
+<script src="/webjars/stomp-websocket/2.3.4/stomp.min.js"></script>
+
+<script th:src="@{/js/color-modes.js}"></script>
+<script th:src="@{/js/main.js}"></script>
+
+</body>
+</html>

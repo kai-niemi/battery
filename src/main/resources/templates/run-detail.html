@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en" data-bs-theme="auto">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <title>Battery</title>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@docsearch/css@3">
+    <link href="/webjars/bootstrap/5.3.8/css/bootstrap.min.css" rel="stylesheet">
+    <link href="../static/css/main.css" rel="stylesheet" th:href="@{/css/main.css}"/>
+</head>
+<body>
+
+<div th:replace="~{fragments/theme :: theme}"></div>
+
+<header th:replace="~{fragments/header :: header}"></header>
+
+<main>
+    <svg th:replace="~{fragments/symbols :: symbols}"></svg>
+
+    <div class="py-3 rounded bg-body-tertiary">
+        <div class="container-fluid" th:with="fmt=${T(io.battery.scenario.run.RunFormat)}">
+            <div class="d-flex flex-wrap gap-2 align-items-center mb-1">
+                <h5 class="mb-0" th:text="${'Run #' + run.id() + ' · ' + run.scenario()}">Run #1</h5>
+                <span th:replace="~{fragments/run-summary :: outcomeBadge(${run})}"></span>
+                <span class="ms-auto">
+                    <a class="btn btn-sm btn-outline-secondary" th:href="@{/run}">All runs</a>
+                    <a class="btn btn-sm btn-outline-secondary" th:href="@{/api/run/{id}(id=${run.id()})}"
+                       target="_blank">JSON</a>
+                </span>
+            </div>
+            <p class="text-body-secondary small"
+               th:text="${fmt.time(run.startTime()) + ' to ' + fmt.time(run.endTime()) + ' · ' + fmt.millis(run.durationMillis())
+                        + ' (' + fmt.millis(run.loadMillis()) + ' of load)'}"></p>
+            <p class="text-body-secondary" th:if="${run.outcomeReason()}" th:text="${run.outcomeReason()}"></p>
+
+            <div th:replace="~{fragments/run-summary :: metrics(${run})}"></div>
+
+            <h6 class="text-body-secondary mt-4">Findings</h6>
+            <div th:replace="~{fragments/run-summary :: findings(${run})}"></div>
+
+            <h6 class="text-body-secondary mt-4">Phases</h6>
+            <p class="small text-body-secondary">
+                Each phase covers the time it was active, including users created in earlier phases.
+            </p>
+            <div class="table-responsive-xl">
+                <table class="table table-sm table-hover align-middle">
+                    <thead>
+                    <tr>
+                        <th>Phase</th>
+                        <th class="text-end">Time</th>
+                        <th class="text-end">Users</th>
+                        <th class="text-end">Dropped</th>
+                        <th class="text-end">Peak users</th>
+                        <th class="text-end">Iterations</th>
+                        <th class="text-end">ops/s</th>
+                        <th class="text-end">Peak ops/s</th>
+                        <th class="text-end">p50</th>
+                        <th class="text-end">p99</th>
+                        <th class="text-end">p99.9</th>
+                        <th class="text-end">Errors</th>
+                        <th class="text-end">Peak waiting</th>
+                        <th class="text-end">Waiting</th>
+                        <th class="text-end">Timeouts</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="phase: ${run.phases()}">
+                        <td>
+                            <span th:text="${phase.name()}"></span>
+                            <span class="badge text-bg-secondary" th:if="${phase.pause()}">pause</span>
+                        </td>
+                        <td class="text-end" th:text="${fmt.millis(phase.durationMillis())}"></td>
+                        <td class="text-end" th:text="${phase.usersStarted()}"></td>
+                        <td class="text-end" th:text="${phase.usersDropped()}"
+                            th:classappend="${phase.usersDropped() > 0} ? 'text-warning-emphasis fw-semibold'"></td>
+                        <td class="text-end" th:text="${phase.peakUsers()}"></td>
+                        <td class="text-end" th:text="${fmt.count(phase.totals().iterations())}"></td>
+                        <td class="text-end" th:text="${fmt.rate(phase.totals().opsPerSecond())}"></td>
+                        <td class="text-end" th:text="${fmt.rate(phase.totals().peakOpsPerSecond())}"></td>
+                        <td class="text-end"
+                            th:text="${phase.latency().count() > 0 ? fmt.millis(phase.latency().p50()) : '-'}"></td>
+                        <td class="text-end"
+                            th:text="${phase.latency().count() > 0 ? fmt.millis(phase.latency().p99()) : '-'}"></td>
+                        <td class="text-end"
+                            th:text="${phase.latency().count() > 0 ? fmt.millis(phase.latency().p999()) : '-'}"></td>
+                        <td class="text-end" th:text="${fmt.percent(phase.totals().errorRate())}"></td>
+                        <td class="text-end" th:text="${phase.peakPending()}"
+                            th:classappend="${phase.peakPending() > 0} ? 'text-warning-emphasis fw-semibold'"></td>
+                        <td class="text-end" th:text="${fmt.percent(phase.pendingRatio())}"></td>
+                        <td class="text-end" th:text="${phase.timeouts()}"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="row g-4 mt-1">
+                <div class="col-lg-6">
+                    <h6 class="text-body-secondary">Latency</h6>
+                    <table class="table table-sm w-auto">
+                        <tbody>
+                        <tr><th>Mean</th><td th:text="${fmt.millis(run.latency().meanMillis())}"></td></tr>
+                        <tr><th>p50</th><td th:text="${fmt.millis(run.latency().p50())}"></td></tr>
+                        <tr><th>p90</th><td th:text="${fmt.millis(run.latency().p90())}"></td></tr>
+                        <tr><th>p99</th><td th:text="${fmt.millis(run.latency().p99())}"></td></tr>
+                        <tr><th>p99.9</th><td th:text="${fmt.millis(run.latency().p999())}"></td></tr>
+                        <tr><th>Max</th><td th:text="${fmt.millis(run.latency().maxMillis())}"></td></tr>
+                        </tbody>
+                    </table>
+                    <p class="small text-body-secondary">
+                        Over all iterations of the run, including any time waiting for a pooled connection.
+                    </p>
+                </div>
+
+                <div class="col-lg-6" th:if="${run.pool()}">
+                    <h6 class="text-body-secondary">Connection pool</h6>
+                    <table class="table table-sm w-auto">
+                        <tbody>
+                        <tr><th>Pool size</th><td th:text="${run.pool().maxSize()}"></td></tr>
+                        <tr><th>Peak active</th><td th:text="${run.pool().peakActive()}"></td></tr>
+                        <tr><th>Peak waiting</th><td th:text="${run.pool().peakPending()}"></td></tr>
+                        <tr><th>Timeouts</th><td th:text="${run.pool().timeouts()}"></td></tr>
+                        <tr><th>Acquire time (mean)</th><td th:text="${fmt.millis(run.pool().meanAcquireMillis())}"></td></tr>
+                        <tr><th>Acquire time (peak 1s mean)</th><td th:text="${fmt.millis(run.pool().peakAcquireMillis())}"></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <th:block th:unless="${run.errors().isEmpty()}">
+                <h6 class="text-body-secondary mt-3">Errors</h6>
+                <div class="table-responsive-xl">
+                    <table class="table table-sm align-middle">
+                        <thead>
+                        <tr>
+                            <th class="text-end">Count</th>
+                            <th>Type</th>
+                            <th>SQL state</th>
+                            <th>Kind</th>
+                            <th>Message</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="error: ${run.errors()}">
+                            <td class="text-end" th:text="${fmt.count(error.count())}"></td>
+                            <td th:text="${error.type()}"></td>
+                            <td th:text="${error.sqlState()}"></td>
+                            <td>
+                                <span class="badge text-bg-warning" th:if="${error.transientError()}">transient</span>
+                                <span class="badge text-bg-danger" th:unless="${error.transientError()}">ended user</span>
+                            </td>
+                            <td class="text-break small" th:text="${error.message()}"></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </th:block>
+        </div>
+    </div>
+    <div class="thick-divider"></div>
+</main>
+
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+
+<script src="/webjars/bootstrap/5.3.8/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/color-modes.js}"></script>
+
+</body>
+</html>

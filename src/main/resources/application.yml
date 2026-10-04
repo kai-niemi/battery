@@ -1,0 +1,99 @@
+##############################################
+# Spring boot properties
+# http://docs.spring.io/spring-boot/docs/current/reference/html/common-application-properties.html
+##############################################
+spring:
+  config:
+    import: optional:file:./config/*/
+  output:
+    ansi:
+      enabled: always
+  profiles:
+    active:
+  application:
+    name: Battery
+    version: 0.9.0-SNAPSHOT
+  #############################
+  shell:
+    command:
+      stacktrace:
+        enabled: true
+      version:
+        enabled: true
+        showBuildName: true
+        showGitBranch: true
+    script:
+      enabled: true
+    interactive:
+      enabled: true
+    noninteractive:
+      enabled: false
+    history:
+      name: .log/battery.history
+  #############################
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/battery
+    username: root
+    password:
+    name: battery
+    hikari:
+      pool-name: battery-pool
+      connection-init-sql: SELECT 1
+      initialization-fail-timeout: -1
+      connection-timeout: 5000
+      validation-timeout: 5000
+      max-lifetime: 180000
+      idle-timeout: 60000
+      # A fixed size pool (minimum-idle equal to maximum-pool-size) stays warm, so ramping
+      # virtual users don't wait for new connections. The pool may grow per launch up to
+      # battery.connectionPool.maxSize, depending on the phases max concurrency.
+      maximum-pool-size: 32
+      minimum-idle: 32
+      transaction-isolation: TRANSACTION_READ_COMMITTED
+      data-source-properties:
+        reWriteBatchedInserts: true
+        ApplicationName: Battery
+
+  # Enable JDK21 virtual threads
+  threads:
+    virtual:
+      enabled: true
+  mvc:
+    problemdetails:
+      enabled: false
+  web:
+    error:
+      whitelabel:
+        enabled: false
+      path: /error
+      include-exception: true
+      include-message: always
+      include-stacktrace: always
+      include-binding-errors: always
+#############################
+logging:
+  pattern:
+    console: "%clr(%d{${LOG_DATEFORMAT_PATTERN:HH:mm:ss.SSS}}){faint} %clr(${LOG_LEVEL_PATTERN:%-5p}) [%-11t] %clr([%-26logger{25}]){cyan} %m%n${LOG_EXCEPTION_CONVERSION_WORD:%wEx}"
+    file: "%d{${LOG_DATEFORMAT_PATTERN:yyyy-MM-dd HH:mm:ss.SSS}} ${LOG_LEVEL_PATTERN:%5p} [%t] %logger{39} : %m%n${LOG_EXCEPTION_CONVERSION_WORD:%wEx}"
+  file:
+    name: .log/battery.log
+  logback:
+    rollingpolicy:
+      max-history: 3
+#############################
+management:
+  health:
+    defaults:
+      enabled: true
+  endpoint:
+    health:
+      show-details: always
+  endpoints:
+    web:
+      base-path: /api/actuator
+      exposure:
+        include: health,info,shutdown,env,threaddump,metrics,prometheus
+#############################
+server:
+  port: 9090

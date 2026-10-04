@@ -1,0 +1,59 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/battery
+    username: root
+    password:
+
+battery:
+  baseDir: config/demo
+
+  before:
+    steps:
+      - name: Prepare Schema
+        sql: |-
+          create schema if not exists demo;
+          
+          create table if not exists demo.customer
+          (
+              id         uuid        not null default gen_random_uuid(),
+              email      varchar(64) not null,
+              first_name varchar(64),
+              last_name  varchar(64),
+          
+              primary key (id)
+          );
+
+  phases:
+    - name: Main phase
+      duration: 60s
+      users: 20
+
+  scenarios:
+    - name: Create and Scan
+      duration: 2m
+      steps:
+        - name: Create Set
+          capture: true
+          max-iterations: 1
+          sql: |-
+            insert into demo.customer (id, email, first_name, last_name) 
+            select gen_random_uuid(),
+                  'alice.bob@domain.com',
+                  concat('Alice ', no::text), 
+                  concat('Bob ', no::text) 
+            from generate_series(1,1000) no;
+
+        - name: Scan using Keyset Pagination
+          script: |-
+            rows = 0;
+            pages = 0;
+            _list = jdbc.queryForList("select * from demo.customer order by id limit 100");
+            while (!_list.isEmpty()) {
+                pages = pages + 1;
+                _lastId = null;
+                foreach (_list) {
+                    rows = rows + 1;
+                    _lastId = _x.get("id");
+                }
+                _list = jdbc.queryForList("select * from demo.customer where id > ? order by id limit 100", [_lastId]);
+            }

@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en" data-bs-theme="auto">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <title>Battery</title>
+
+    <link rel="stylesheet" type="text/css"
+          href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.css"></link>
+    <link rel="stylesheet" type="text/css"
+          href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/theme/abbott.min.css"></link>
+    <link rel="stylesheet" type="text/css"
+          href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/theme/dracula.min.css"></link>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@docsearch/css@3">
+    <link href="/webjars/bootstrap/5.3.8/css/bootstrap.min.css" rel="stylesheet">
+    <link href="../static/css/main.css" rel="stylesheet" th:href="@{/css/main.css}"/>
+
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        var formModel = /*[[${form}]]*/ "dummy";
+        /*]]>*/
+    </script>
+</head>
+
+<body>
+
+<div th:replace="~{fragments/theme :: theme}"></div>
+
+<header th:replace="~{fragments/header :: header}"></header>
+
+<main>
+    <svg th:replace="~{fragments/symbols :: symbols}"></svg>
+    
+    <div class="py-3 rounded bg-body-tertiary">
+        <div class="container-fluid">
+            <form th:action="@{/playground}" th:object="${form}" method="post" id="editorForm">
+                <div class="row g-2 py-0 border-bottom align-items-center">
+                    <div class="col">
+                        <h5>Editor</h5>
+                        <textarea id="input" name="input"
+                                  th:field="*{input}" class="form-control"></textarea>
+                    </div>
+
+                    <div class="col">
+                        <h5>Output</h5>
+                        <textarea id="output" name="output"
+                                  th:field="*{output}" class="form-control"></textarea>
+                    </div>
+                </div>
+
+                <div class="row py-3">
+                    <div class="col">
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-start align-items-center">
+                            <div class="col-2 form-floating">
+                                <select th:field="*{scriptFormat}" class="form-select" id="scriptFormat"
+                                        data-bs-toggle="tooltip" data-bs-placement="top" title="How to interpret the editor script">
+                                    <option th:each="f : ${T(io.battery.model.ScriptFormat).values()}"
+                                            th:value="${f}"
+                                            th:text="${f}"
+                                            th:selected="${f == form.scriptFormat}"></option>
+                                </select>
+                                <label for="scriptFormat" class="form-label">Script format</label>
+                            </div>
+
+<!--                            <div class="vr"></div>-->
+
+                            <button name="action" value="execute" type="submit" class="btn btn-sm btn-outline-primary">Execute</button>
+                            <button name="action" value="validate" type="submit" class="btn btn-sm btn-outline-warning">Validate</button>
+                            <button name="action" value="reset" type="submit" class="btn btn-sm btn-outline-secondary">Reset</button>
+
+                            <div class="form-check">
+                                <label class="form-check-label" for="login-use-file-credentials"
+                                       data-bs-toggle="tooltip" data-bs-placement="top" title="Capture and store the script/SQL execution output">
+                                    Capture state
+                                </label>
+                                <input th:field="*{capture}" class="form-check-input" type="checkbox" id="login-use-file-credentials">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="thick-divider"></div>
+</main>
+
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+
+<script language="javascript" type="text/javascript"
+        src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.js"></script>
+<script language="javascript" type="text/javascript"
+        src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/mode/perl/perl.min.js"></script>
+
+<script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+<script src="https://code.jquery.com/ui/1.13/jquery-ui.js"></script>
+<script src="https://code.jquery.com/color/jquery.color-2.2.0.js"></script>
+
+<script src="/webjars/bootstrap/5.3.8/js/bootstrap.bundle.min.js"></script>
+<script src="/webjars/sockjs-client/1.5.1/sockjs.min.js"></script>
+<script src="/webjars/stomp-websocket/2.3.4/stomp.min.js"></script>
+
+<script th:src="@{/js/color-modes.js}"></script>
+<script th:src="@{/js/main.js}"></script>
+<script th:src="@{/js/playground.js}"></script>
+
+</body>
+</html>

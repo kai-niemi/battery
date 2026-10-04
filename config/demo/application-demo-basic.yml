@@ -1,0 +1,120 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/battery
+    username: root
+    password:
+
+battery:
+  baseDir: config/demo
+
+  before:
+    steps:
+      - name: Prepare Schema
+        sql: |-
+          create schema if not exists demo;
+          
+          create table if not exists demo.user
+          (
+              id         uuid         not null default gen_random_uuid(),
+              email      varchar(128) not null,
+              credits    int          not null,
+              created_at timestamptz  not null default clock_timestamp(),
+
+              primary key (id)
+          );
+
+  after:
+    steps:
+      - name: Post Count
+        sql: select count(1) from demo.user;
+
+  phases:
+    - name: Warm up phase
+      duration: 60s
+      users: 20
+    - name: Steady state phase
+      duration: 30s
+    - name: Peak load phase
+      duration: 30s
+      startRate: 4
+      maxRate: 30
+      maxConcurrency: 64
+    - name: Sustained peak phase
+      duration: 1m
+    - name: Cool down phase
+      duration: 30s
+
+  scenarios:
+    - name: Insert Named Params
+      duration: 2m
+      steps:
+        - name: Insert users (named params)
+          sql: |-
+            insert into demo.user (email, credits)
+              values (:email, :credits);
+            insert into demo.user (email, credits)
+              values (:email, :credits);
+            insert into demo.user (email, credits)
+              values (:email, :credits);
+            insert into demo.user (email, credits)
+              values (:email, :credits);
+          params:
+            email: gen.randomEmail()
+            credits: gen.randomInt(1,100)
+
+    - name: Insert Named Params (batches)
+      duration: 2m
+      steps:
+        - name: Insert user batch (named params)
+          sql: |-
+            insert into demo.user (email, credits)
+              values (:email1, :credits),
+                     (:email2, :credits),
+                     (:email3, :credits),
+                     (:email4, :credits);
+          params:
+            email1: gen.randomEmail()
+            email2: gen.randomEmail()
+            email3: gen.randomEmail()
+            email4: gen.randomEmail()
+            credits: gen.randomInt(1,10)
+
+    - name: Insert Inlined
+      duration: 2m
+      steps:
+        - name: Seed credits (inlined)
+          capture: true
+          sql: |-
+            select ceil(random()*10)::int as x,
+                   ceil(random()*10)::int as y,
+                   ceil(random()*10)::int as z;
+
+        - name: Insert users (inlined)
+          sql: |-
+            insert into demo.user (email, credits)
+              values ('#{ gen.randomEmail() }'::varchar,  #{ x + y + z } );
+            insert into demo.user (email, credits)
+              values ('#{ gen.randomEmail() }'::varchar,  #{ x + y + z } );
+            insert into demo.user (email, credits)
+              values ('#{ gen.randomEmail() }'::varchar,  #{ x + y + z } );
+            insert into demo.user (email, credits)
+              values ('#{ gen.randomEmail() }'::varchar,  #{ x + y + z } );
+
+    - name: Inserts Inlined (batches)
+      duration: 2m
+      steps:
+        - name: Seed credits (inlined batches)
+          capture: true
+          sql: |-
+            select ceil(random()*10)::int as x,
+                   ceil(random()*10)::int as y,
+                   ceil(random()*10)::int as z;
+
+        - name: Insert user batch (inlined)
+          sql: |-
+            insert into demo.user (email, credits)
+            values
+             ('#{ gen.randomEmail() }'::varchar,  #{ x + y + z } ),
+             ('#{ gen.randomEmail() }'::varchar,  #{ x + y + z } ),
+             ('#{ gen.randomEmail() }'::varchar,  #{ x + y + z } ),
+             ('#{ gen.randomEmail() }'::varchar,  #{ x + y + z } );

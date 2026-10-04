@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en" data-bs-theme="auto">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <title>Battery</title>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@docsearch/css@3">
+    <link href="/webjars/bootstrap/5.3.8/css/bootstrap.min.css" rel="stylesheet">
+    <link href="../static/css/main.css" rel="stylesheet" th:href="@{/css/main.css}"/>
+</head>
+
+<body>
+
+<div th:replace="~{fragments/theme :: theme}"></div>
+
+<header th:replace="~{fragments/header :: header}"></header>
+
+<main>
+    <svg th:replace="~{fragments/symbols :: symbols}"></svg>
+
+    <div class="px-4 pt-3 my-3 text-center">
+        <div class="col-lg-6 mx-auto">
+            <h1 class="display-5 fw-bold text-body-emphasis">Welcome to Battery</h1>
+
+            <p class="lead mb-4">
+                A flexible SQL database load-testing tool for benchmarking performance, scalability, and resilience.
+            </p>
+
+            <p class="mb-4">
+            </p>
+
+            <div class="alert alert-info align-items-center alert-dismissible fade show" role="alert">
+                Connected to <code class="mt-2" th:text="${databaseVersion}"></code>
+                in isolation level <code class="mt-2" th:text="${databaseIsolation}"></code>.
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- User guide -->
+    <div class="container-xl pb-4">
+        <h3 class="mb-1">How to run a load test</h3>
+        <p class="text-body-secondary">
+            A load test is defined by the YAML profile Battery was started with. These steps walk through
+            running it from the web UI, from start to findings.
+        </p>
+
+        <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3 mb-4">
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title"><span class="badge text-bg-primary rounded-pill me-2">1</span>Check the setup</h5>
+                        <p class="card-text">
+                            Confirm the database and isolation level in the banner above. On the
+                            <strong>Dashboard</strong>, the <em>Effective Model</em> shows the parsed configuration,
+                            with its before steps, phases, scenarios and after steps listed next to it.
+                        </p>
+                    </div>
+                    <div class="card-footer bg-body border-0 pt-0">
+                        <a class="btn btn-sm btn-outline-primary" th:href="@{/scenario}">Open Dashboard</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title"><span class="badge text-bg-primary rounded-pill me-2">2</span>Pick what to run</h5>
+                        <p class="card-text">
+                            Select a scenario. Optionally skip the before or after steps, individual phases, or
+                            all phases to try the scenario with a single virtual user first. Skipping before steps
+                            that capture state can make a scenario fail.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title"><span class="badge text-bg-primary rounded-pill me-2">3</span>Start the run</h5>
+                        <p class="card-text">
+                            Press <strong>Start</strong>. The status card turns green, and each phase card shows its
+                            progress as virtual users are ramped up. Press <strong>Abort</strong> to cancel early;
+                            running users stop and the run ends as cancelled.
+                        </p>
+                    </div>
+                    <div class="card-footer bg-body border-0 pt-0">
+                        <a class="btn btn-sm btn-outline-primary" th:href="@{/scenario}">Open Dashboard</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title"><span class="badge text-bg-primary rounded-pill me-2">4</span>Watch the workers</h5>
+                        <p class="card-text">
+                            Each virtual user is a worker with live latency percentiles, throughput and error counts.
+                            Filter by status, and open a worker to see its timing, call totals and the exceptions it hit,
+                            with stack traces.
+                        </p>
+                    </div>
+                    <div class="card-footer bg-body border-0 pt-0">
+                        <a class="btn btn-sm btn-outline-primary" th:href="@{/worker}">Open Workers</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title"><span class="badge text-bg-primary rounded-pill me-2">5</span>Follow the metrics</h5>
+                        <p class="card-text">
+                            Charts show worker latency and throughput over time, and system metrics such as the
+                            connection pool. Pending pool threads mean users are queueing for connections, which
+                            adds to the measured latency.
+                        </p>
+                    </div>
+                    <div class="card-footer bg-body border-0 pt-0 d-flex gap-2">
+                        <a class="btn btn-sm btn-outline-primary" th:href="@{/worker-charts}">Worker Metrics</a>
+                        <a class="btn btn-sm btn-outline-primary" th:href="@{/system-charts}">System Metrics</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title"><span class="badge text-bg-primary rounded-pill me-2">6</span>Review the results</h5>
+                        <p class="card-text">
+                            Once all users complete, the Dashboard shows a summary of the run: outcome, throughput,
+                            latency, errors, users, pool usage and <em>findings</em> such as pool saturation, dropped
+                            users or degrading latency. Recent runs are kept on the <strong>Runs</strong> page.
+                        </p>
+                    </div>
+                    <div class="card-footer bg-body border-0 pt-0">
+                        <a class="btn btn-sm btn-outline-primary" th:href="@{/run}">Open Runs</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-lg-8">
+                <h5 class="text-body-secondary">Key concepts</h5>
+                <div class="accordion" id="conceptsAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#conceptPhases">Phases
+                            </button>
+                        </h2>
+                        <div id="conceptPhases" class="accordion-collapse collapse" data-bs-parent="#conceptsAccordion">
+                            <div class="accordion-body">
+                                Phases control the rate at which virtual users are created. A phase either creates a
+                                fixed number of <code>users</code> spread evenly over its <code>duration</code>, or ramps
+                                linearly from <code>startRate</code> to <code>maxRate</code> users per second. A phase
+                                without either acts as a pause. <code>maxConcurrency</code> caps the active users;
+                                users arriving above the cap are dropped, a sign that the database isn't keeping up.
+                                Users can outlive their phase, so phases can overlap.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#conceptScenarios">Scenarios and steps
+                            </button>
+                        </h2>
+                        <div id="conceptScenarios" class="accordion-collapse collapse" data-bs-parent="#conceptsAccordion">
+                            <div class="accordion-body">
+                                A scenario is the sequence of steps each virtual user repeats for the scenario's
+                                <code>duration</code>. A step runs embedded SQL, a Battery Script, or a script file.
+                                Before steps run once to prepare, such as creating a schema, and after steps run once
+                                to clean up.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#conceptCapture">State capture
+                            </button>
+                        </h2>
+                        <div id="conceptCapture" class="accordion-collapse collapse" data-bs-parent="#conceptsAccordion">
+                            <div class="accordion-body">
+                                A step marked <span class="badge text-bg-success rounded-pill">Capture</span> passes
+                                its result to the following steps of the same iteration, such as an inserted
+                                <code>id</code> used by a later select. State captured by before steps is shared with
+                                every virtual user.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#conceptErrors">Transient and non-transient errors
+                            </button>
+                        </h2>
+                        <div id="conceptErrors" class="accordion-collapse collapse" data-bs-parent="#conceptsAccordion">
+                            <div class="accordion-body">
+                                Transient errors, such as serialization conflicts or connection pool timeouts, are
+                                retried with backoff and the user keeps going. Non-transient errors end the user,
+                                which then shows as <span class="badge text-bg-danger">FAILED</span> on the Workers page.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <h5 class="text-body-secondary">More tools</h5>
+                <ul class="list-group shadow-sm">
+                    <li class="list-group-item">
+                        <a class="fw-semibold" th:href="@{/playground}">Playground</a>
+                        <div class="small text-body-secondary">Try Battery Script expressions and see their output.</div>
+                    </li>
+                    <li class="list-group-item">
+                        <a class="fw-semibold" th:href="@{/api}" target="_blank">REST API</a>
+                        <div class="small text-body-secondary">Automate runs and read run summaries as JSON.</div>
+                    </li>
+                    <li class="list-group-item">
+                        <span class="fw-semibold">Shell</span>
+                        <div class="small text-body-secondary">
+                            In the interactive shell, <code>help</code> lists all commands and
+                            <code>functions</code> lists the script functions.
+                        </div>
+                    </li>
+                    <li class="list-group-item">
+                        <a class="fw-semibold" href="https://github.com/kai-niemi/battery" target="_blank">Documentation</a>
+                        <div class="small text-body-secondary">Configuration reference and tutorials on GitHub.</div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="thick-divider"></div>
+</main>
+
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+
+<script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+<script src="https://code.jquery.com/ui/1.13/jquery-ui.js"></script>
+<script src="https://code.jquery.com/color/jquery.color-2.2.0.js"></script>
+
+<script src="/webjars/bootstrap/5.3.8/js/bootstrap.bundle.min.js"></script>
+<script src="/webjars/sockjs-client/1.5.1/sockjs.min.js"></script>
+<script src="/webjars/stomp-websocket/2.3.4/stomp.min.js"></script>
+
+<script th:src="@{/js/color-modes.js}"></script>
+<script th:src="@{/js/main.js}"></script>
+
+</body>
+</html>

@@ -1,0 +1,55 @@
+# Publishes a GitHub release with the distribution archive, for each version tag pushed by release.sh
+
+name: Release
+
+on:
+  push:
+    tags: [ 'v*' ]
+
+jobs:
+  release:
+
+    runs-on: ubuntu-latest
+
+    # Needed to create the release and upload its assets
+    permissions:
+      contents: write
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        # Full history and tags, for the commit info in git.properties
+        fetch-depth: 0
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        cache: maven
+
+    - name: Build distribution
+      run: mvn -s $GITHUB_WORKSPACE/.github/workflows/maven-settings.xml -B package -Passembly --file pom.xml
+      env:
+        USER_NAME: ${{ secrets.USER_NAME }}
+        ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+
+    # The archive is named after the POM version, which is the tag without the v prefix
+    - name: Check distribution version
+      run: |
+        version="${GITHUB_REF_NAME#v}"
+        archive="target/battery-${version}-bin.tar.gz"
+        if [[ ! -f "${archive}" ]]; then
+          echo "::error::Expected ${archive}, does the POM version match tag ${GITHUB_REF_NAME}?"
+          ls target/*.tar.gz || true
+          exit 1
+        fi
+        echo "ARCHIVE=${archive}" >> "$GITHUB_ENV"
+
+    - name: Create GitHub release
+      run: |
+        gh release create "${GITHUB_REF_NAME}" "${ARCHIVE}" \
+          --verify-tag \
+          --title "Battery ${GITHUB_REF_NAME}" \
+          --generate-notes
+      env:
+        GH_TOKEN: ${{ github.token }}

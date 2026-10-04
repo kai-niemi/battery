@@ -1,0 +1,150 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/battery
+    username: root
+    password:
+
+battery:
+  baseDir: config/retail
+
+  before:
+    steps:
+      - name: Create Schema
+        path: create-psql.sql
+
+  phases:
+    - name: Warm up phase
+      duration: 60s
+      users: 20
+    - name: Steady state phase
+      duration: 30s
+    - name: Peak load phase
+      duration: 30s
+      startRate: 4
+      maxRate: 30
+      maxConcurrency: 64
+    - name: Sustained peak phase
+      duration: 1m
+    - name: Cool down phase
+      duration: 30s
+
+  scenarios:
+#    - name: Insert Customers
+#      alias: ic
+#      duration: 2m
+#      steps:
+#        - name: Insert Customer
+#          sql: |-
+#            insert into retail.customer (id, email, first_name, last_name)
+#            values (gen_random_uuid(), :email, :first_name, :last_name);
+#          params:
+#            email: gen.randomEmail()
+#            first_name: gen.randomFirstName()
+#            last_name: gen.randomLastName()
+#
+#    - name: Insert Products
+#      alias: ip
+#      duration: 2m
+#      steps:
+#        - name: Insert Product
+#          sql: |-
+#            insert into retail.product (id, sku, inventory, price, name, description)
+#            values (gen_random_uuid(), :sku, :inventory, :price, :name, :description::JSONB);
+#          params:
+#            sku: gen.randomString(32)
+#            inventory: gen.randomInt(1,10)
+#            price: gen.randomBigDecimal(10.00,500.00)
+#            name: gen.randomWord(32)
+#            description: gen.randomJson(1,3)
+
+    - name: Place Orders
+      alias: io
+      duration: 2m
+      transactional: true
+      steps:
+        - name: Insert Customers
+          max-iterations: 1
+          sql: |-
+            insert into retail.customer (email, first_name, last_name)
+            select concat('user@', no::text),
+                   concat('Alice:', no::text),
+                   concat('Bob:', no::text)
+            from generate_series(1, 1000) no;
+
+        - name: Insert Products
+          max-iterations: 1
+          sql: |-
+            insert into retail.product (sku, inventory, price, name, description)
+            select concat('sku:', no::text),
+                   ceil(random() * 100),
+                   ceil(random() * 9999.99),
+                   concat('ABB:', no::text),
+                   null
+            from generate_series(1, 1000) no;
+
+        - name: Find Random Customers
+          capture: true
+          max-iterations: 1
+          result-name: customers
+          sql: |-
+            select id, email from retail.customer order by random() limit 1000;
+
+        - name: Find Random Products
+          capture: true
+          max-iterations: 1
+          result-name: products
+          sql: |-
+            select id, inventory from retail.product order by random() limit 1000;
+
+        - name: Insert Orders
+          capture: true
+          sql: |-
+            insert into retail.orders (customer_id, total_price, tags, status) 
+              values (:customer_id, :total_price, :tags, :status) 
+              returning id as order_id;
+          params:
+            customer_id: std.selectRandom(customers).get("id");
+            total_price: gen.randomBigDecimal(10.00,500.00)
+            tags: gen.randomWord(32)
+            status: "\"placed\""
+
+        - name: Insert Order Items
+          capture: true
+          sql: |-
+            insert into retail.order_item (order_id, product_id, item_pos, quantity, unit_price) 
+              values (:order_id, :product_id, 1, :quantity, :unit_price) 
+              returning quantity as qty1, product_id as pid1;
+            
+            insert into retail.order_item (order_id, product_id, item_pos, quantity, unit_price) 
+              values (:order_id, :product_id, 2, :quantity, :unit_price) 
+              returning quantity as qty2, product_id as pid2;
+            
+            insert into retail.order_item (order_id, product_id, item_pos, quantity, unit_price) 
+              values (:order_id, :product_id, 3, :quantity, :unit_price) 
+              returning quantity as qty3, product_id as pid3;
+            
+            insert into retail.order_item (order_id, product_id, item_pos, quantity, unit_price) 
+              values (:order_id, :product_id, 4, :quantity, :unit_price) 
+              returning quantity as qty4, product_id as pid4;
+          params:
+            order_id: order_id;
+            product_id: std.selectRandom(products).get("id");
+            quantity: gen.randomInt(1,10);
+            unit_price: gen.randomBigDecimal(10.00,500.00)
+
+        - name: Update Product Inventory
+          sql: |-
+            update retail.product set inventory = inventory - :qty1 where id=:id1;
+            update retail.product set inventory = inventory - :qty2 where id=:id2;
+            update retail.product set inventory = inventory - :qty3 where id=:id3;
+            update retail.product set inventory = inventory - :qty4 where id=:id4;
+          params:
+            qty1: qty1
+            qty2: qty2
+            qty3: qty3
+            qty4: qty4
+            id1: pid1
+            id2: pid2
+            id3: pid3
+            id4: pid4
+

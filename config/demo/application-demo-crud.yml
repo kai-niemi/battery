@@ -1,0 +1,82 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/battery
+    username: root
+    password:
+
+battery:
+  baseDir: config/demo
+
+  network:
+    agents:
+      - name: host-1
+        url: "http://localhost:9090"
+      - name: host-2
+        url: "http://localhost:9091"
+      - name: host-3
+        url: "http://localhost:9092"
+
+  before:
+    steps:
+      - name: Prepare Schema
+        sql: |-
+          create schema if not exists demo;
+          
+          create table if not exists demo.customer
+          (
+              id         uuid        not null default gen_random_uuid(),
+              email      varchar(64) not null,
+              first_name varchar(64),
+              last_name  varchar(64),
+          
+              primary key (id)
+          );
+
+  phases:
+    - name: Warm up phase
+      duration: 60s
+      users: 20
+    - name: Peak load phase
+      duration: 30s
+      startRate: 4
+      maxRate: 50
+      maxConcurrency: 64
+    - name: Sustained peak phase
+      duration: 15s
+
+  scenarios:
+    - name: Customer CRUD
+      duration: 20s
+      steps:
+        - name: Create Customer
+          capture: true
+          sql: |-
+            insert into demo.customer (id, email, first_name, last_name) 
+            values (gen_random_uuid(), 
+                    '#{ gen.randomEmail() }',
+                    '#{ gen.randomFirstName() }', 
+                    '#{ gen.randomLastName() }' )
+            returning id;
+
+        - name: Retrieve Customer
+          sql: |-
+            select * from demo.customer where id = :id;
+          params:
+            id: id
+
+        - name: Update Customer
+          sql: |-
+            update demo.customer
+            set first_name=:first_name, last_name=:last_name
+            where id=:id;
+          params:
+            id: id
+            first_name: gen.randomFirstName()
+            last_name: gen.randomLastName()
+
+        - name: Delete Customer
+          sql: |-
+            delete from demo.customer
+            where id=:id;
+          params:
+            id: id

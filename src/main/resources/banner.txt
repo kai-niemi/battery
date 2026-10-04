@@ -1,0 +1,12 @@
+    ${AnsiColor.BRIGHT_YELLOW}____        __  __
+   / __ )____ _/ /_/ /____  _______  __
+  / __  / __ `/ __/ __/ _ \/ ___/ / / /
+ / /_/ / /_/ / /_/ /_/  __/ /  / /_/ /
+/_____/\__,_/\__/\__/\___/_/   \__, /
+                              /____/
+${AnsiColor.BRIGHT_MAGENTA}${application.title}${application.formatted-version} powered by Spring Boot${spring-boot.formatted-version}
+${AnsiColor.BRIGHT_MAGENTA}A SQL database load testing tool${AnsiColor.DEFAULT}
+${AnsiColor.BRIGHT_GREEN}   Active profiles: ${AnsiColor.BRIGHT_YELLOW}${spring.profiles.active}${AnsiColor.DEFAULT}
+${AnsiColor.BRIGHT_GREEN}      Database URL: ${AnsiColor.BRIGHT_YELLOW}${spring.datasource.url}${AnsiColor.DEFAULT}
+${AnsiColor.BRIGHT_GREEN}           Web URL: ${AnsiColor.BRIGHT_YELLOW}http://${server.address:localhost}:${server.port:8080}${AnsiColor.DEFAULT}
+${AnsiColor.BRIGHT_GREEN}           API URL: ${AnsiColor.BRIGHT_YELLOW}http://${server.address:localhost}:${server.port:8080}/api${AnsiColor.DEFAULT}

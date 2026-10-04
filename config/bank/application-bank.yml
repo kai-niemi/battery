@@ -1,0 +1,145 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/battery
+    username: root
+    password:
+
+battery:
+  baseDir: config/bank
+
+  before:
+    steps:
+      - name: Create Schema
+        path: create-psql.sql
+
+      - name: Load Account Plan
+        path: load-psql.sql
+
+  phases:
+    - name: Warm up phase
+      duration: 60s
+      users: 20
+#    - name: Steady state phase
+#      duration: 30s
+#    - name: Peak load phase
+#      duration: 30s
+#      startRate: 4
+#      maxRate: 30
+#      maxConcurrency: 64
+#    - name: Sustained peak phase
+#      duration: 1m
+    - name: Cool down phase
+      duration: 30s
+
+  scenarios:
+
+    - name: Transfer Funds (explicit + optimistic)
+      alias: a
+      duration: 2m
+      transactional: true
+      steps:
+        - name: Find Accounts
+          capture: true
+          sql: |-
+            WITH accounts AS (
+              SELECT *, ROW_NUMBER() OVER (PARTITION BY city ORDER BY id) n
+              FROM bank.account WHERE city IN (:city) limit 2
+            )
+            SELECT id,balance,city
+            FROM accounts
+            ORDER BY random(),city;
+          params:
+            city: std.selectRandom(L["london","new york","stockholm"]);
+
+        - name: Transfer (explicit)
+          capture: true
+          path: transfer-explicit.sql
+
+          params:
+            city: std.selectRandom(result).get("city");
+            transfer_id: transfer_id
+            account_id1: result.get(0).get("id");
+            account_id2: result.get(1).get("id");
+            amount: gen.randomBigDecimal(10.00,500.00)
+
+    - name: Transfer Funds (explicit + pessimistic)
+      alias: a
+      duration: 2m
+      transactional: true
+      steps:
+        - name: Find Accounts
+          capture: true
+          sql: |-
+            SELECT id, balance, city
+            FROM bank.account
+            WHERE city = :city
+            ORDER BY id
+            LIMIT 2
+            FOR UPDATE;
+          params:
+            city: std.selectRandom(L["london","new york","stockholm"]);
+
+        - name: Transfer
+          capture: true
+          path: transfer-explicit.sql
+          params:
+            city: std.selectRandom(result).get("city");
+            transfer_id: transfer_id
+            account_id1: result.get(0).get("id");
+            account_id2: result.get(1).get("id");
+            amount: gen.randomBigDecimal(10.00,500.00)
+
+    - name: Transfer Funds (implicit + optimistic)
+      alias: b
+      duration: 2m
+      transactional: false
+      steps:
+        - name: Find Accounts
+          capture: true
+          sql: |-
+            WITH accounts AS (
+              SELECT *, ROW_NUMBER() OVER (PARTITION BY city ORDER BY id) n
+              FROM bank.account WHERE city IN (:city) limit 2
+            )
+            SELECT id,balance,city
+            FROM accounts
+            ORDER BY random(), city;
+          params:
+            city: std.selectRandom(L["london","new york","stockholm"]);
+
+        - name: Transfer
+          capture: true
+          path: transfer-implicit.sql
+          params:
+            city: std.selectRandom(result).get("city");
+            transfer_id: transfer_id
+            account_id1: result.get(0).get("id");
+            account_id2: result.get(1).get("id");
+            amount: gen.randomBigDecimal(10.00,500.00)
+
+    - name: Transfer Funds (implicit + pessimistic)
+      alias: c
+      duration: 2m
+      transactional: false
+      steps:
+        - name: Find Accounts
+          capture: true
+          sql: |-
+            SELECT id, balance, city
+            FROM bank.account
+            WHERE city = :city
+            ORDER BY id
+            LIMIT 2
+            FOR UPDATE;
+          params:
+            city: std.selectRandom(L["london","new york","stockholm"]);
+
+        - name: Transfer
+          capture: true
+          path: transfer-implicit.sql
+          params:
+            city: std.selectRandom(result).get("city");
+            transfer_id: transfer_id
+            account_id1: result.get(0).get("id");
+            account_id2: result.get(1).get("id");
+            amount: gen.randomBigDecimal(10.00,500.00)

@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en" data-bs-theme="auto">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <title>Battery</title>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@docsearch/css@3">
+    <link href="/webjars/bootstrap/5.3.8/css/bootstrap.min.css" rel="stylesheet">
+    <link href="../static/css/main.css" rel="stylesheet" th:href="@{/css/main.css}"/>
+</head>
+<body>
+
+<div th:replace="~{fragments/theme :: theme}"></div>
+
+<header th:replace="~{fragments/header :: header}"></header>
+
+<main>
+    <svg th:replace="~{fragments/symbols :: symbols}"></svg>
+
+    <div class="py-3 rounded bg-body-tertiary">
+        <div class="container-fluid" th:with="fmt=${T(io.battery.scenario.run.RunFormat)}">
+            <div class="d-flex align-items-center mb-3">
+                <h5 class="text-body-secondary mb-0">Recent runs</h5>
+                <a class="btn btn-sm btn-outline-secondary ms-auto" th:href="@{/api/run}" target="_blank">JSON</a>
+            </div>
+
+            <p class="text-body-secondary" th:if="${runs.isEmpty()}">
+                No finished runs yet. Runs are listed once all their virtual users have completed.
+            </p>
+
+            <div class="table-responsive-xl" th:unless="${runs.isEmpty()}">
+                <table class="table table-sm table-hover align-middle">
+                    <thead>
+                    <tr>
+                        <th>Run</th>
+                        <th>Scenario</th>
+                        <th>Started</th>
+                        <th>Duration</th>
+                        <th>Outcome</th>
+                        <th class="text-end">Iterations</th>
+                        <th class="text-end">ops/s</th>
+                        <th class="text-end">p99</th>
+                        <th class="text-end">Errors</th>
+                        <th>Findings</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="run: ${runs}">
+                        <td><a th:href="@{/run/{id}(id=${run.id()})}" th:text="${'#' + run.id()}">#1</a></td>
+                        <td th:text="${run.scenario()}"></td>
+                        <td th:text="${fmt.time(run.startTime())}"></td>
+                        <td th:text="${fmt.millis(run.durationMillis())}"></td>
+                        <td><span th:replace="~{fragments/run-summary :: outcomeBadge(${run})}"></span></td>
+                        <td class="text-end" th:text="${fmt.count(run.totals().iterations())}"></td>
+                        <td class="text-end" th:text="${fmt.rate(run.totals().opsPerSecond())}"></td>
+                        <td class="text-end" th:text="${fmt.millis(run.latency().p99())}"></td>
+                        <td class="text-end" th:text="${fmt.percent(run.totals().errorRate())}"></td>
+                        <!-- Counted here, since th:if is evaluated before th:with on the same element -->
+                        <td th:with="errors=${run.findings().?[severity().name() == 'ERROR'].size()},
+                                     warnings=${run.findings().?[severity().name() == 'WARNING'].size()},
+                                     infos=${run.findings().?[severity().name() == 'INFO'].size()}">
+                            <span class="badge text-bg-danger me-1" th:if="${errors > 0}"
+                                  th:text="${errors}" title="Errors"></span>
+                            <span class="badge text-bg-warning me-1" th:if="${warnings > 0}"
+                                  th:text="${warnings}" title="Warnings"></span>
+                            <span class="badge text-bg-secondary" th:if="${infos > 0}"
+                                  th:text="${infos}" title="Info"></span>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="thick-divider"></div>
+</main>
+
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+
+<script src="/webjars/bootstrap/5.3.8/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/color-modes.js}"></script>
+
+</body>
+</html>
