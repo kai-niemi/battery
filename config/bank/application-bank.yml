@@ -19,15 +19,15 @@ battery:
     - name: Warm up phase
       duration: 60s
       users: 20
-#    - name: Steady state phase
-#      duration: 30s
-#    - name: Peak load phase
-#      duration: 30s
-#      startRate: 4
-#      maxRate: 30
-#      maxConcurrency: 64
-#    - name: Sustained peak phase
-#      duration: 1m
+    - name: Steady state phase
+      duration: 30s
+    - name: Peak load phase
+      duration: 30s
+      startRate: 4
+      maxRate: 30
+      maxConcurrency: 64
+    - name: Sustained peak phase
+      duration: 1m
     - name: Cool down phase
       duration: 30s
 
@@ -63,6 +63,7 @@ battery:
             amount: gen.randomBigDecimal(10.00,500.00)
 
     - name: Transfer Funds (explicit + pessimistic)
+      primary: true
       alias: a
       duration: 2m
       transactional: true
@@ -92,7 +93,6 @@ battery:
     - name: Transfer Funds (implicit + optimistic)
       alias: b
       duration: 2m
-      transactional: false
       steps:
         - name: Find Accounts
           capture: true
@@ -117,10 +117,9 @@ battery:
             account_id2: result.get(1).get("id");
             amount: gen.randomBigDecimal(10.00,500.00)
 
-    - name: Transfer Funds (implicit + pessimistic)
+    - name: Transfer Funds (implicit + modifying CTE)
       alias: c
       duration: 2m
-      transactional: false
       steps:
         - name: Find Accounts
           capture: true
@@ -129,8 +128,7 @@ battery:
             FROM bank.account
             WHERE city = :city
             ORDER BY id
-            LIMIT 2
-            FOR UPDATE;
+            LIMIT 2;
           params:
             city: std.selectRandom(L["london","new york","stockholm"]);
 

@@ -29,36 +29,36 @@ battery:
       duration: 30s
 
   scenarios:
-#    - name: Insert Customers
-#      alias: ic
-#      duration: 2m
-#      steps:
-#        - name: Insert Customer
-#          sql: |-
-#            insert into retail.customer (id, email, first_name, last_name)
-#            values (gen_random_uuid(), :email, :first_name, :last_name);
-#          params:
-#            email: gen.randomEmail()
-#            first_name: gen.randomFirstName()
-#            last_name: gen.randomLastName()
-#
-#    - name: Insert Products
-#      alias: ip
-#      duration: 2m
-#      steps:
-#        - name: Insert Product
-#          sql: |-
-#            insert into retail.product (id, sku, inventory, price, name, description)
-#            values (gen_random_uuid(), :sku, :inventory, :price, :name, :description::JSONB);
-#          params:
-#            sku: gen.randomString(32)
-#            inventory: gen.randomInt(1,10)
-#            price: gen.randomBigDecimal(10.00,500.00)
-#            name: gen.randomWord(32)
-#            description: gen.randomJson(1,3)
+    - name: Insert Customers
+      alias: ic
+      duration: 2m
+      steps:
+        - name: Insert Customer
+          sql: |-
+            insert into retail.customer (id, email, first_name, last_name)
+            values (gen_random_uuid(), :email, :first_name, :last_name);
+          params:
+            email: gen.randomEmail()
+            first_name: gen.randomFirstName()
+            last_name: gen.randomLastName()
+
+    - name: Insert Products
+      alias: ip
+      duration: 2m
+      steps:
+        - name: Insert Product
+          sql: |-
+            insert into retail.product (id, sku, inventory, price, name, description)
+            values (gen_random_uuid(), :sku, :inventory, :price, :name, :description::JSONB);
+          params:
+            sku: gen.randomString(32)
+            inventory: gen.randomInt(1,10)
+            price: gen.randomBigDecimal(10.00,500.00)
+            name: gen.randomWord(32)
+            description: gen.randomJson(1,3)
 
     - name: Place Orders
-      alias: io
+      alias: po
       duration: 2m
       transactional: true
       steps:
