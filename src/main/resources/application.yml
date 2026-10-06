@@ -12,7 +12,8 @@ spring:
     active:
   application:
     name: Battery
-    version: 0.9.0-SNAPSHOT
+    # The POM version, filtered in by the Spring Boot parent
+    version: "@project.version@"
   #############################
   shell:
     command:

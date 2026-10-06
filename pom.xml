@@ -11,7 +11,7 @@
 
     <groupId>io.battery</groupId>
     <artifactId>battery</artifactId>
-    <version>0.9.0-SNAPSHOT</version>
+    <version>26.1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>Battery</name>
@@ -427,7 +427,7 @@
                                 <!-- Single branch model -->
                                 <productionBranch>main</productionBranch>
                                 <developmentBranch>main</developmentBranch>
-                                <!-- Tags such as v1.2.3, which start the GitHub release workflow -->
+                                <!-- Tags such as v26.1.0, which start the GitHub release workflow -->
                                 <versionTagPrefix>v</versionTagPrefix>
                             </gitFlowConfig>
                         </configuration>

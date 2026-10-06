@@ -156,7 +156,7 @@ curl -s -H "Accept: application/hal+json" http://localhost:9090/api/scenario/sta
     }
   },
   "appName" : "Battery",
-  "appVersion" : "0.9.0-SNAPSHOT",
+  "appVersion" : "26.1.0",
   "scenarioStatus" : "IDLE",
   "secureHash" : "0b30a4078fc6ecc397f0c31c2beaf957ffcb82f4bdffd9c5e923e5559978421c"
 }

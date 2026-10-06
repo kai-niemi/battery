@@ -6,6 +6,7 @@
 * [About](#about)
 * [Features](#features)
   * [How it works](#how-it-works)
+  * [How it looks](#how-it-looks)
 * [Quick Start](#quick-start)
 * [Usage](#usage)
   * [Compatibility](#compatibility)
